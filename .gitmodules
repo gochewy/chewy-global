@@ -43,3 +43,12 @@
 [submodule "console"]
 	path = console
 	url = https://github.com/gochewy/console.git
+[submodule "postgres"]
+	path = postgres
+	url = https://github.com/gochewy/postgres.git
+[submodule "ory-oathkeeper"]
+	path = ory-oathkeeper
+	url = https://github.com/gochewy/ory-oathkeeper.git
+[submodule "ory-kratos"]
+	path = ory-kratos
+	url = https://github.com/gochewy/ory-kratos.git
