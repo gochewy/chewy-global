@@ -8,34 +8,34 @@
 	path = gitpod-workspace
 	url = https://github.com/gochewy/gitpod-workspace.git
 [submodule "nextjs"]
-	path = nextjs
+	path = components/nextjs
 	url = https://github.com/gochewy/nextjs.git
 [submodule "nestjs"]
-	path = nestjs
+	path = components/nestjs
 	url = https://github.com/gochewy/nestjs.git
 [submodule "hasura"]
-	path = hasura
+	path = components/hasura
 	url = https://github.com/gochewy/hasura.git
 [submodule "expo"]
-	path = expo
+	path = components/expo
 	url = https://github.com/gochewy/expo.git
 [submodule "directus"]
-	path = directus
+	path = components/directus
 	url = https://github.com/gochewy/directus.git
 [submodule "keycloak"]
-	path = keycloak
+	path = components/keycloak
 	url = https://github.com/gochewy/keycloak.git
 [submodule "s3"]
-	path = s3
+	path = components/s3
 	url = https://github.com/gochewy/s3.git
 [submodule "meilisearch"]
-	path = meilisearch
+	path = components/meilisearch
 	url = https://github.com/gochewy/meilisearch.git
 [submodule "appsmith"]
-	path = appsmith
+	path = components/appsmith
 	url = https://github.com/gochewy/appsmith.git
 [submodule "metabase"]
-	path = metabase
+	path = components/metabase
 	url = https://github.com/gochewy/metabase.git
 [submodule "docs"]
 	path = docs
@@ -44,11 +44,11 @@
 	path = console
 	url = https://github.com/gochewy/console.git
 [submodule "postgres"]
-	path = postgres
+	path = components/postgres
 	url = https://github.com/gochewy/postgres.git
 [submodule "ory-oathkeeper"]
-	path = ory-oathkeeper
+	path = components/ory-oathkeeper
 	url = https://github.com/gochewy/ory-oathkeeper.git
 [submodule "ory-kratos"]
-	path = ory-kratos
+	path = components/ory-kratos
 	url = https://github.com/gochewy/ory-kratos.git
