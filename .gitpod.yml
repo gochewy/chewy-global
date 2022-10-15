@@ -1,0 +1,14 @@
+image:
+  file: .gitpod.Dockerfile
+
+tasks:
+  - command: echo "Welcome to Chewy!"
+
+vscode:
+  extensions:
+    - dbaeumer.vscode-eslint
+    - ms-azuretools.vscode-docker
+    - eamodio.gitlens
+    - esbenp.prettier-vscode
+    - jpoissonnier.vscode-styled-components
+    - styled-components.vscode-styled-components
