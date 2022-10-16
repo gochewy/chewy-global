@@ -1,7 +1,7 @@
 import {Command} from '@oclif/core'
+// eslint-disable-next-line unicorn/import-style
 import * as chalk from 'chalk'
 import {GitProcess} from 'dugite'
-import {dirname} from 'node:path'
 import {findRoot} from '../../lib/context/find-root'
 import {findSubmodulePaths} from '../../lib/context/find-submodule-paths'
 
