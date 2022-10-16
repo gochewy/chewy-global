@@ -1,6 +1,6 @@
 {
-  "name": "chewy-contributor-cli",
-  "version": "0.0.0",
+  "name": "contributor-cli",
+  "version": "0.1.0",
   "description": "A commandline to help with Chewy development tasks.",
   "author": "Raphaël Titsworth-Morin @raphaeltm",
   "bin": {

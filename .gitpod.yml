@@ -2,6 +2,7 @@ image:
   file: .gitpod.Dockerfile
 
 tasks:
+  - init: (cd docs && yarn install) && (cd chewy-contributor-cli && yarn install) && (cd lib && yarn install)
   - command: echo "Welcome to Chewy!"
 
 vscode:
