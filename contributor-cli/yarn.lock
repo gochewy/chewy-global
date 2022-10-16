@@ -1702,6 +1702,14 @@ doctrine@^3.0.0:
   dependencies:
     esutils "^2.0.2"
 
+dugite@^2.0.0:
+  version "2.0.0"
+  resolved "https://registry.yarnpkg.com/dugite/-/dugite-2.0.0.tgz#de0ef29b58caa863e25fecd318e99a0e6b05420b"
+  integrity sha512-0+1imU6NGzcvf42DDBMywZDyPBTNxKaG4IupDKfQbWU8S5fI+J3UVAQOrF0MNzGQYqv9G80Oz/LcS5043z05WQ==
+  dependencies:
+    progress "^2.0.3"
+    tar "^6.1.11"
+
 ejs@^3.1.6, ejs@^3.1.8:
   version "3.1.8"
   resolved "https://registry.yarnpkg.com/ejs/-/ejs-3.1.8.tgz#758d32910c78047585c7ef1f92f9ee041c1c190b"
@@ -4065,7 +4073,7 @@ process-nextick-args@^2.0.0, process-nextick-args@~2.0.0:
   resolved "https://registry.npmjs.org/process-nextick-args/-/process-nextick-args-2.0.1.tgz"
   integrity sha512-3ouUOpQhtgrbOa17J7+uxOTpITYWaGP7/AhoR3+A+/1e9skrzelGi/dXzEYyvbxubEF6Wn2ypscTKiKJFFn1ag==
 
-progress@^2.0.0:
+progress@^2.0.0, progress@^2.0.3:
   version "2.0.3"
   resolved "https://registry.npmjs.org/progress/-/progress-2.0.3.tgz"
   integrity sha512-7PiHtLll5LdnKIMw100I+8xJXR5gW2QwWYkT6iJva0bXitZKa/XMrSbdmg3r2Xnaidz9Qumd0VPaMrZlF9V9sA==
