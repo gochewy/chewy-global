@@ -7,6 +7,10 @@ tasks:
       (cd docs && yarn install) && (cd chewy-contributor-cli && yarn install) && (cd lib && yarn install)
   - command: echo "Welcome to Chewy!"
 
+github:
+  prebuilds:
+    branches: true
+
 vscode:
   extensions:
     - dbaeumer.vscode-eslint
