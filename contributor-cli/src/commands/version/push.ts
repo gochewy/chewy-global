@@ -11,12 +11,10 @@ interface PushOptions {
 }
 
 const push = async (path: string, {setUpstream, branch}: PushOptions) => {
-  console.log('@@ About to push', path)
+  console.log('About to push', path)
   const result = await (setUpstream ?
     GitProcess.exec(['push', '--set-upstream', 'origin', branch], path) :
     GitProcess.exec(['push'], path))
-
-  console.log('@@ result: ', result);
 
   if (result.exitCode !== 0) {
     throw new Error(result.stderr)
