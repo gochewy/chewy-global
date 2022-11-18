@@ -1,0 +1,8 @@
+{
+    "json.schemas": [
+        {
+            "fileMatch": ["*chewy-component.yml"],
+            "url": "./lib/schemas/chewy-component-schema.json",
+        }
+    ]
+}
