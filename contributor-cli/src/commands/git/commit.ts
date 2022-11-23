@@ -19,14 +19,16 @@ const commit = async (path: string, {message, all}: CommitOptions) => {
 
   const result = await GitProcess.exec(['commit', '-m', message], path)
 
-  if (result.exitCode !== 0 && !result.stdout.includes('nothing to commit')) {
-    throw new Error(result.stderr)
-  }
-
   const root = await findRoot()
   const dirname = root === path ? '/' : path.replace(root, '')
 
-  console.log(`✅ Successfully committed ${chalk.bold.green(dirname)}`)
+  if (result.exitCode === 0) {
+    console.log(`✅ Successfully committed ${chalk.bold.green(dirname)}`)
+  } else if (result.stdout.includes('nothing to commit')) {
+    console.log(`⚠️ Nothing to commit in ${chalk.bold.green(dirname)}`)
+  } else {
+    throw new Error(result.stderr)
+  }
 }
 
 export default class Commit extends Command {
