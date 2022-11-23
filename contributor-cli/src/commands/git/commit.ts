@@ -14,16 +14,12 @@ const commit = async (path: string, {message, all}: CommitOptions) => {
   console.log('About to commit', path)
 
   if (all) {
-    console.log('Add all first...', path)
     await GitProcess.exec(['add', '.'], path)
-    console.log('Successfully added all...', path)
   }
 
-  console.log('Actualy running commit...', path)
   const result = await GitProcess.exec(['commit', '-m', message], path)
 
   if (result.exitCode !== 0 && !result.stdout.includes('nothing to commit')) {
-    console.log('Commit failed...', path, result)
     throw new Error(result.stderr)
   }
 
