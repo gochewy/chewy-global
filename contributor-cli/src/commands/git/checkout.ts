@@ -27,12 +27,12 @@ const switchToNewBranch = async (path: string, branch: string) => {
   console.log(`✅ Successfully switched ${chalk.bold.green(dirname)} to ${chalk.bold.green(branch)}`)
 }
 
-export default class Switch extends Command {
-  static description = 'Switch to work on a given version'
+export default class Checkout extends Command {
+  static description = 'Switch branch to work on a given version'
 
   static examples = [
     `
-chewy-cc version switch v0.1.0
+chewy-cc git checkout-version 0.1.0
 `,
   ]
 
@@ -47,7 +47,7 @@ chewy-cc version switch v0.1.0
   ]
 
   async run(): Promise<void> {
-    const parsed = await this.parse(Switch)
+    const parsed = await this.parse(Checkout)
     const {args: {version}} = parsed
 
     const rootPath = await findRoot()

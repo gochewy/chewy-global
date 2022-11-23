@@ -26,7 +26,7 @@ const push = async (path: string, {setUpstream, branch}: PushOptions) => {
   console.log(`✅ Successfully pushed ${chalk.bold.green(dirname)}`)
 }
 
-export default class Switch extends Command {
+export default class Push extends Command {
   static description =
     'Push work on a given version (assumes everything has been properly committed)';
 
@@ -43,7 +43,7 @@ chewy-cc version push --set-upstream
   static args = [];
 
   async run(): Promise<void> {
-    const parsed = await this.parse(Switch)
+    const parsed = await this.parse(Push)
     const {
       flags: {setUpstream = false},
     } = parsed
