@@ -4,7 +4,7 @@ image:
 tasks:
   - init: |-
       git submodule update --init --recursive && git submodule update --recursive
-      (cd docs && yarn install) && (cd contributor-cli && yarn install) && (cd lib && yarn install)
+      (cd docs && yarn install) && (cd contributor-cli && yarn install) && (cd cli && yarn install) && (cd lib && yarn install)
   - command: echo "Welcome to Chewy!"
     env: 
       IS_CHEWY_CONTRIBUTOR: true

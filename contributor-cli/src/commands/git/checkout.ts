@@ -32,7 +32,7 @@ export default class Checkout extends Command {
 
   static examples = [
     `
-chewy-cc git checkout-version 0.1.0
+chewy-cc git checkout 0.1.0
 `,
   ]
 
