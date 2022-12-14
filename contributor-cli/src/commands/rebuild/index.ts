@@ -20,10 +20,8 @@ export default class Rebuild extends Command {
 
     async run(): Promise<any> {
       const {args} = await this.parse(Rebuild)
-      console.log('@@ args:', args)
       const path = args?.path || 'contributor-cli'
       const cwd = join((await findRoot()), path)
-      console.log('@@ cwd:', cwd)
       execSync('yarn build', {cwd})
     }
 }
