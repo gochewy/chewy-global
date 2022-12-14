@@ -1,4 +1,5 @@
 import {Command} from '@oclif/core'
+import chalk = require('chalk')
 import {execSync} from 'node:child_process'
 import {join} from 'node:path'
 import {findRoot} from '../../lib/context/find-root'
@@ -23,5 +24,6 @@ export default class Rebuild extends Command {
       const path = args?.path || 'contributor-cli'
       const cwd = join((await findRoot()), path)
       execSync('yarn build', {cwd})
+      console.log(`${chalk.green('✅ Successfully rebuilt:')} ${cwd}`)
     }
 }
