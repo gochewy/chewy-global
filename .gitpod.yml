@@ -2,13 +2,7 @@ image:
   file: .gitpod.Dockerfile
 
 tasks:
-  - init: |-
-      git submodule update --init --recursive && git submodule update --recursive
-      (cd docs && yarn install) && (cd contributor-cli && yarn install) && (cd cli && yarn install) && (cd lib && yarn install)
-  - command: echo "Welcome to Chewy!"
-    env: 
-      IS_CHEWY_CONTRIBUTOR: true
-      
+  - init: . ./.gitpod/initialize.sh
 
 github:
   prebuilds:
