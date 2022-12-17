@@ -41,20 +41,26 @@ chewy-cc git checkout 0.1.0
   static args = [
     {
       name: 'version',
-      description: 'The Chewy version you would like to work on.',
-      required: true,
+      description: 'The Chewy version you would like to work on. If ommitted, will sync all submodules with root repo.',
     },
   ]
 
   async run(): Promise<void> {
+    const rootPath = await findRoot()
+    const currentBranch = (await GitProcess.exec(['branch', '--show-current'], rootPath)).stdout.replace('\n', '')
+
     const parsed = await this.parse(Checkout)
     const {args: {version}} = parsed
 
-    const rootPath = await findRoot()
+    let newBranch: string
 
-    const currentBranch = (await GitProcess.exec(['branch', '--show-current'], rootPath)).stdout
-
-    const newBranch = version === 'main' ? version : `${version}-branch`
+    if (!version) {
+      newBranch = currentBranch
+    } else if (version === 'main') {
+      newBranch = version
+    } else {
+      newBranch = `${version}-branch`
+    }
 
     console.log(chalk.black.bgWhite('Current Branch:'), chalk.green.bold(currentBranch.replace('\n', '')))
     console.log('')

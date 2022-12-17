@@ -4,3 +4,5 @@
 (cd contributor-cli && yarn install && yarn build)
 (cd cli && yarn install && yarn build)
 (cd lib && yarn install)
+
+/workspace/chewy-global/contributor-cli/bin/chewy-cc git checkout
