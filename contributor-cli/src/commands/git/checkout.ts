@@ -52,15 +52,7 @@ chewy-cc git checkout 0.1.0
     const parsed = await this.parse(Checkout)
     const {args: {version}} = parsed
 
-    let newBranch: string
-
-    if (!version) {
-      newBranch = currentBranch
-    } else if (version === 'main') {
-      newBranch = version
-    } else {
-      newBranch = `${version}-branch`
-    }
+    const newBranch = version ? version : currentBranch
 
     console.log(chalk.black.bgWhite('Current Branch:'), chalk.green.bold(currentBranch.replace('\n', '')))
     console.log('')
