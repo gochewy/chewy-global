@@ -6,7 +6,7 @@ import {findRoot} from '../../lib/context/find-root'
 import {findSubmodulePaths} from '../../lib/context/find-submodule-paths'
 
 const switchToNewBranch = async (path: string, branch: string) => {
-  const result = await GitProcess.exec(['checkout', '-b', branch], path)
+  const result = await GitProcess.exec(['checkout', '-b', branch, `origin/${branch}`], path)
   if (result.exitCode !== 0) {
     const errorLowercase = result.stderr.toLowerCase()
     const preExistsErrorLowercase = `a branch named '${branch}' already exists`.toLowerCase()
@@ -15,6 +15,11 @@ const switchToNewBranch = async (path: string, branch: string) => {
       const result2 = await GitProcess.exec(['checkout', branch], path)
       if (result2.exitCode !== 0) {
         throw new Error(result2.stderr)
+      }
+
+      const trackResult = await GitProcess.exec(['checkout', '--track', `origin/${branch}`], path)
+      if (trackResult.exitCode !== 0) {
+        throw new Error(trackResult.stderr)
       }
     } else {
       throw new Error(result.stderr)
