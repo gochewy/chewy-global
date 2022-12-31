@@ -52,3 +52,6 @@
 [submodule "ory-kratos"]
 	path = components/ory-kratos
 	url = https://github.com/gochewy/ory-kratos.git
+[submodule "cli-plugin"]
+	path = cli-plugin
+	url = https://github.com/gochewy/cli-plugin.git
