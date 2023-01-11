@@ -4,6 +4,7 @@
         "esbenp.prettier-vscode",
         "ms-azuretools.vscode-docker",
         "eamodio.gitlens",
-        "styled-components.vscode-styled-components"
+        "styled-components.vscode-styled-components",
+        "bungcip.better-toml"
     ]
 }

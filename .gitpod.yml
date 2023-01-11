@@ -3,6 +3,7 @@ image:
 
 tasks:
   - init: . ./.gitpod/initialize.sh
+  - command:  cd demos
 
 github:
   prebuilds:

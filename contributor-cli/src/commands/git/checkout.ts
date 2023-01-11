@@ -14,11 +14,13 @@ const switchToNewBranch = async (path: string, branch: string) => {
     if (errorLowercase.includes(preExistsErrorLowercase)) {
       const result2 = await GitProcess.exec(['checkout', branch], path)
       if (result2.exitCode !== 0) {
+        console.error('@@ checkout existing error')
         throw new Error(result2.stderr)
       }
 
-      const trackResult = await GitProcess.exec(['checkout', '--track', `origin/${branch}`], path)
+      const trackResult = await GitProcess.exec(['branch', '-u', `origin/${branch}`], path)
       if (trackResult.exitCode !== 0) {
+        console.error('@@ track error')
         throw new Error(trackResult.stderr)
       }
     } else {
