@@ -23,7 +23,7 @@ export default class Rebuild extends Command {
       const {args} = await this.parse(Rebuild)
       const path = args?.path || 'contributor-cli'
       const cwd = join((await findRoot()), path)
-      execSync('yarn build', {cwd})
+      execSync('yarn build', {cwd, stdio: 'inherit'})
       console.log(`${chalk.green('✅ Successfully rebuilt:')} ${cwd}`)
     }
 }
