@@ -3,7 +3,10 @@ image:
 
 tasks:
   - init: . ./.gitpod/initialize.sh
+    command: cd components
   - command:  cd demos
+  - command:  cd cli
+  - command:  cd lib
 
 github:
   prebuilds:
