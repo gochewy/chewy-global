@@ -27,12 +27,66 @@ export default class ComponentUpdateCommands extends Command {
     const repo = 'https://github.com/gochewy/component-commands.git'
     const dirs = await fs.readdir(basePath, {withFileTypes: true})
     console.log('NOTE: We commit everything before updating...')
+    const manualMergeDirs: string[] = []
+
     for (const dir of dirs) {
       if (dir.isDirectory()) {
         const fullPath = path.resolve(basePath, dir.name)
-        execSync('git add . && git commit -am "chore: pre update commands"')
-        execSync(`git subtree pull --prefix=${fullPath}/.chewy/commands ${repo} main`)
+
+        console.info(`\nUpdating ${fullPath}...\n`)
+
+        execSync('git add .', {
+          cwd: fullPath,
+        })
+
+        try {
+          execSync('git commit -am "Pre-update commands."', {
+            cwd: fullPath,
+          })
+        } catch (error: any) {
+          // check if the error is because there's nothing to commit
+          const output = error.output.toString()
+          if (output.includes('nothing to commit')) {
+            console.info('Nothing to commit.')
+          } else {
+            throw error
+          }
+        }
+
+        try {
+          execSync(`git subtree pull --prefix .chewy/commands --squash ${repo} main`, {
+            cwd: fullPath,
+          })
+        } catch (error: any) {
+          const output = error.output.toString()
+          if (output.includes('git subtree add')) {
+            execSync(`git subtree add --prefix .chewy/commands --squash ${repo} main`, {
+              cwd: fullPath,
+            })
+          } else if (`${output}`.toLowerCase().includes('conflict')) {
+            console.info(`There are conflicts in:\n\t${fullPath}\n Please resolve them and commit manually.`)
+            manualMergeDirs.push(fullPath)
+            continue
+          } else {
+            throw error
+          }
+        }
+
+        try {
+          // we do this because sometimes in GitPod the automatic
+          // merge doesn't work, seemingly because it tries to open
+          // an editor even when it shouldn't
+          execSync('git commit -am "merged"', {
+            cwd: fullPath,
+          })
+        } catch {}
       }
+    }
+
+    console.info('\nDone!\n')
+    console.info('\nPlease resolve conflicts in:\n')
+    for (const dir of manualMergeDirs) {
+      console.info(`\t${dir}`)
     }
   }
 }
