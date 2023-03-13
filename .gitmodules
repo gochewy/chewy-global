@@ -55,3 +55,6 @@
 [submodule "component-commands"]
 	path = component-commands
 	url = https://github.com/gochewy/component-commands.git
+[submodule "component-deployment"]
+	path = component-deployment
+	url = https://github.com/gochewy/component-deployment.git
