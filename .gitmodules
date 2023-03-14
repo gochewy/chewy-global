@@ -58,3 +58,6 @@
 [submodule "component-deployment"]
 	path = component-deployment
 	url = https://github.com/gochewy/component-deployment.git
+[submodule "components/docker-development-host"]
+	path = components/docker-development-host
+	url = https://github.com/gochewy/docker-development-host.git
