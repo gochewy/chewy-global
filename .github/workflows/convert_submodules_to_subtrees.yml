@@ -1,0 +1,68 @@
+---
+# This GitHub Action converts all Git submodules into subtrees.
+#
+# Motivation
+# ==========
+# Managing dependencies as submodules requires additional commands to update
+# each module and may break CI/CD processes if someone forgets to initialize or
+# update them. Subtrees flatten these dependencies into the repository while
+# preserving a connection back to the source repository. By running the
+# conversion in CI we ensure that every branch can easily transition from
+# submodules to subtrees with minimal manual work.
+#
+# Usage
+# -----
+# This workflow is triggered manually through the "workflow_dispatch" event. It
+# checks out the repository, executes the conversion script and commits the
+# resulting changes to a new branch named `subtree-conversion-<run-id>`.
+# Review the branch and merge it using a pull request once satisfied.
+#
+# The workflow does not run automatically on push to avoid modifying history
+# without review. It is intended as a one-time migration tool.
+#
+# Steps Overview
+# 1. Checkout the full Git history so `git subtree` works correctly.
+# 2. Run the provided script that replaces each submodule with a subtree.
+# 3. Create a new branch for the conversion result and commit the changes.
+# 4. Push the branch back to the repository for review.
+#
+# If the conversion produces no changes (for example, there were no submodules),
+# the workflow will exit without creating a new branch.
+# ------------------------------------------------------------------------------
+
+name: Convert Submodules to Subtrees
+"on":
+  workflow_dispatch:
+    inputs:
+      base-branch:
+        description: 'Branch to start the conversion from'
+        required: false
+        default: "main"
+
+jobs:
+  convert:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.inputs.base-branch }}
+
+      - name: Run conversion script
+        run: bash scripts/convert_submodules_to_subtrees.sh
+
+      - name: Commit and push changes
+        run: |
+          set -e
+          git config user.name "GitHub Actions"
+          git config user.email "actions@github.com"
+          branch="subtree-conversion-${{ github.run_id }}"
+          git checkout -b "$branch"
+          git add -A
+          if git diff --cached --quiet; then
+            echo "No changes detected. Nothing to commit."
+            exit 0
+          fi
+          git commit -m "Convert submodules to subtrees"
+          git push origin HEAD:"$branch"
