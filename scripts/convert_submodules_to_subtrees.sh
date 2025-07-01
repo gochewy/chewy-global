@@ -53,20 +53,23 @@ if [[ ${#SUBMODULE_PATHS[@]} -eq 0 ]]; then
   exit 0
 fi
 
-for PATH in "${SUBMODULE_PATHS[@]}"; do
-  NAME=$(basename "$PATH")
-  URL=$(git config -f .gitmodules --get submodule."$NAME".url)
-  BRANCH=$(git config -f .gitmodules --get submodule."$NAME".branch 2>/dev/null || echo "main")
+for SUBMODULE_PATH in "${SUBMODULE_PATHS[@]}"; do
+  # Extract a short name for logging purposes without relying on the `basename`
+  # utility. Using parameter expansion avoids accidental PATH modifications that
+  # would break command lookups.
+  SUBMODULE_NAME="${SUBMODULE_PATH##*/}"
+  URL=$(git config -f .gitmodules --get submodule."$SUBMODULE_NAME".url)
+  BRANCH=$(git config -f .gitmodules --get submodule."$SUBMODULE_NAME".branch 2>/dev/null || echo "main")
 
-  echo "Converting submodule $NAME (path: $PATH, url: $URL, branch: $BRANCH)"
+  echo "Converting submodule $SUBMODULE_NAME (path: $SUBMODULE_PATH, url: $URL, branch: $BRANCH)"
 
   # Deinitialize and remove the submodule
-  git submodule deinit -f "$PATH" || true
-  git rm -f "$PATH"
-  rm -rf ".git/modules/$PATH" || true
+  git submodule deinit -f "$SUBMODULE_PATH" || true
+  git rm -f "$SUBMODULE_PATH"
+  rm -rf ".git/modules/$SUBMODULE_PATH" || true
 
   # Remove the submodule entry from .gitmodules
-  git config -f .gitmodules --remove-section "submodule.$NAME" || true
+  git config -f .gitmodules --remove-section "submodule.$SUBMODULE_NAME" || true
 
   # If .gitmodules is empty after removal, delete it
   if [[ -z $(git config -f .gitmodules --list) ]]; then
@@ -74,7 +77,7 @@ for PATH in "${SUBMODULE_PATHS[@]}"; do
   fi
 
   # Add the repository as a subtree
-  git subtree add --prefix="$PATH" "$URL" "$BRANCH" --squash
+  git subtree add --prefix="$SUBMODULE_PATH" "$URL" "$BRANCH" --squash
 
 done
 
