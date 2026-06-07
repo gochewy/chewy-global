@@ -1,226 +1,406 @@
-# Chewy as an Agent-Operable Application Substrate
+# Chewy as an Agent-Operable Startup Stack
 
 > A direction document for what Chewy can become in an AI-enabled world.
-> This is a planning artifact, not an implementation. It reframes Chewy's
-> existing assets (config schemas, dependency graph, deploy engine) around the
-> reality that most application code is now written *with* and *by* agents.
+> This is a planning artifact, not an implementation.
 
 ## TL;DR
 
-Chewy started as a "deep stack framework": a CLI that composes best-of-breed OSS
-components (Next.js, NestJS, Hasura, Postgres, Ory, Expo, etc.) into a coherent
-microservice stack, with infrastructure deployment (Pulumi, starting on
-DigitalOcean) treated as a first-class part of the framework.
+Chewy should become a framework for declaring, operating, testing, debugging,
+and deploying a full startup stack made from open-source components. It should
+not be only a content stack, a CMS, a Kubernetes platform, a Pulumi replacement,
+or a one-shot app generator.
 
-The thing that actually makes Chewy distinctive — and was always the unfinished
-core — is **not** scaffolding and **not** the curated component list. It is a
-**layered dependency-resolution and binding engine**: applications declare typed
-dependencies (on other services, or on data services like databases and object
-storage), and Chewy resolves each dependency through a *chain* of infrastructure
-layers down to a concrete cloud provider, wiring the **outputs** of each layer
-(connection strings, credentials, endpoints) to the **inputs** of the layer
-above it via explicit mappings. The end user supplies only infrastructure keys;
-everything else is provisioned (via Pulumi) and bound automatically.
+The modern product is a **deterministic contract layer plus guidance-driven
+agent playbooks**:
 
-The durable, compounding asset — the moat — is the **library of binding
-patterns**: the curated, validated knowledge of how to satisfy "Next.js + Prisma
-needs Postgres-with-pgvector" using Neon, or RDS-in-a-private-VPC, or
-Postgres-on-DigitalOcean, etc., across the combinatorial space of *services ×
-data-services × providers*. In an agent world, that library is exactly what lets
-a code-writing agent wire a real, deployable system correctly instead of
-hallucinating glue — and it is precisely the part that is expensive to build,
-hard to copy, and improves with every pattern added.
+1. Chewy deterministically records which features are enabled, which deployment
+   targets exist, what each component requires/provides, how capabilities bind to
+   providers, and what must be true for the stack to be valid.
+2. Chewy emits instructions, tests, debug recipes, and safe-edit boundaries so
+   code-writing agents can perform the messy installation and integration work
+   without Chewy needing to encode every file edit for every framework version.
 
-## The dependency-resolution model (the core idea)
+This split is the key maintenance insight. The original Chewy vision got stuck
+because fully deterministic installation across a wide OSS stack creates an
+enormous maintenance burden. In the agent era, Chewy can instead define the
+shape, invariants, validation, and operational workflow, then let agents adapt
+the implementation to the current codebase.
 
-This is the heart of Chewy and the part worth investing in.
+## The Product Thesis
 
-### Layers of dependency
+Chewy is an operational contract for agents.
 
-There are two broad kinds of nodes in the graph:
+It should help an agent answer:
 
-- **Services** — fundamentally code or binaries: things that get built and/or run
-  somewhere (a Next.js app, a NestJS API, Hasura, a Django app, an Expo build).
-- **Data / infrastructure dependencies** — databases, object storage
-  (S3-compatible), search, caches, and the physical/logical infrastructure that
-  backs them.
+- What features are enabled in this app?
+- Which components implement those features?
+- What does each component require and provide?
+- How does this run locally?
+- How do I seed data, log in, and run Playwright tests?
+- How do I enable useful debug information?
+- How do I inspect logs, volumes, queues, database state, and deployed services?
+- How do I deploy this same app to each target?
+- What is safe for an agent to change?
+- What invariants must pass before the change is valid?
 
-A service declares what it **requires**. For example, a Next.js app with Prisma
-declares a required dependency on a **Postgres database**, optionally with
-**modifiers** (`pgvector enabled`, a minimum version, an extension set). It does
-not declare *how* that database is provisioned — only that it needs one, and what
-shape it must have.
+The durable value is not scaffolding. Agents can already scaffold. The durable
+value is the curated, verified knowledge of how real startup components fit
+together and how agents should safely operate them.
 
-### Satisfaction is a chain, and providers collapse it differently
+## Startup Stack Scope
 
-A single logical dependency ("a Postgres database") is satisfied by a *chain* of
-lower-level dependencies, each of which can itself be satisfied differently:
+The first product surface should be a portable startup stack:
 
-```
-Next.js + Prisma  ──requires──►  Postgres database (modifiers: pgvector)
-                                        │
-                       ┌────────────────┴─────────────────┐
-                       ▼                                    ▼
-              [ logical database ]                  [ Neon Postgres ]
-                       │                          (satisfies logical +
-              [ physical instance ]               physical in one node)
-                       │
-              [ cloud provider / region ]
-```
+- web frontend / marketing site
+- API service
+- auth
+- background jobs / queues
+- database
+- object storage
+- cache
+- email
+- admin, analytics, and CMS where the tool is declarative enough
+- local dev, preview, staging, and production targets
 
-- With **RDS**: a *logical database* lives inside a *physical instance*, which
-  must be provisioned on a *cloud provider* in a region. Three layers.
-- With **Neon**: a single node satisfies both the logical and physical layers at
-  once — the chain is shorter.
+The current preferred modern component direction is TypeScript-first and
+agent-friendly:
 
-The point: the **consumer doesn't care about the chain**. Prisma only needs a
-connection string. As long as *something* downstream eventually provides a valid
-connection string (plus whatever else the modifiers imply), the dependency is
-satisfied, regardless of how many layers it took to get there.
+- Astro for web/marketing
+- Hono for APIs
+- Better Auth for auth
+- BullMQ + Redis where Redis-backed queues make sense
+- Postgres for primary data
+- S3-compatible object storage
+- Cloudflare-native services where they support a near-zero-cost path
 
-### Inputs, outputs, and the mapping layer
+Not every attractive open-source component should be treated equally. Directus,
+Appsmith, Hasura, Metabase, and similar tools may be useful, but Chewy should
+only promote them to first-class recipes when their configuration and important
+state are reproducible enough for agents to inspect, modify, test, and promote
+across environments.
 
-Every node declares two typed surfaces:
+## The Viable Split: Deterministic State, Loose Implementation
 
-- **Requires (inputs)** — what it needs to be provisioned or to function (e.g. a
-  cloud provider needs an API key; a logical database needs a physical instance
-  to live in).
-- **Provides (outputs)** — what it exposes once provisioned (e.g. Neon provides a
-  `connection_string`, a `database_password`, a `host`; an S3 bucket provides an
-  endpoint, region, access key, secret).
+Chewy should be deterministic about state and contracts:
 
-A **mapping layer** declares how one node's outputs satisfy another node's
-inputs: "for a Postgres-shaped dependency, map provider output
-`connection_string` → consumer input `DATABASE_URL`." Mappings are where the
-real, fiddly knowledge lives — e.g. *"Hasura connecting to RDS in the same VPC
-should use the private endpoint output, not the public one"* vs *"Hasura + Neon
-uses the pooled connection string."*
-
-This is what makes the system composable: dependencies can be **reused** across
-an application (two services sharing one database), **decoupled**
-(swap Neon for RDS without touching the app), or fully specified by the app while
-the deployer just plugs in keys.
-
-### Why this is the moat
-
-The schema, the graph resolver, and the Pulumi calls are the *mechanism* — real
-work, but replicable. The **defensible, compounding asset is the library of
-binding patterns**: a deep, curated, validated catalog of "you can run X against
-Y hosted on Z, and here is exactly how the outputs map to inputs." Examples of
-single library entries:
-
-- Hasura + Neon Postgres (pooled connection)
-- Hasura + RDS Postgres over a private VPC connection
-- Next.js/Prisma + DigitalOcean Managed Postgres with pgvector
-- Django + MariaDB on Aiven
-- A service + S3-compatible storage on Cloudflare R2 vs AWS S3 vs DO Spaces
-
-Every entry added makes the next application more likely to "just work." This is
-a flywheel, not a feature — and it is the one part of Chewy that an agent cannot
-trivially regenerate, because it encodes operational truth (private vs public
-endpoints, pooling, auth quirks, extension support) that is not in any single
-component's README.
-
-## Why this matters in an agent world
-
-Agents are good at generating code and bad at the *operational* glue: knowing
-that this database wants a pooled connection, that this pairing needs a private
-endpoint, that this storage provider names its secret differently. That glue is
-exactly what Chewy's binding library encodes.
-
-So the agent value proposition is concrete: an agent declares *intent* ("add a
-search service and a vector-capable Postgres"), Chewy's resolver + binding
-library turns that into a **correct, provisionable, wired** plan, and a
-deterministic validator gives a hard pass/fail before anything is built or
-deployed. The agent does the open-ended part (app code); Chewy owns the
-constrained, high-stakes part (resolution + binding + provisioning) where being
-wrong is expensive.
-
-## Contract surfaces
-
-To make the above explicit and agent-operable, the contract is layered:
-
-- `chewy-app.yml` — the application composition: which services exist and what
-  they require (with modifiers).
-- `chewy-interfaces.yml` — the **requires/provides** surfaces and the
-  **mappings** between outputs and inputs. This is where the binding library is
-  expressed and extended.
-- `chewy-runtime.yml` — how services run locally (the dev-loop / compose-equivalent).
-- `chewy-agent.yml` — affordances for agents: which operations are safe and
-  automatable, what is deterministic, what an agent may and may not mutate.
-
-## The agent workflow Chewy should make safe
-
-```
-plan ──► declare requirements ──► resolve + bind ──► validate ──► dev / deploy
-  ▲                                                      │
-  └──────────────────── on failure ─────────────────────┘
+```bash
+chewy feature enable web --with astro
+chewy feature enable api --with hono
+chewy feature enable auth --with better-auth
+chewy feature enable queue
+chewy feature enable storage
+chewy target enable local-compose
+chewy target enable cloudflare
+chewy target enable vm
+chewy target enable kubernetes
 ```
 
-1. **Plan** — agent proposes intent in terms of services and required dependencies.
-2. **Declare** — agent edits `chewy-app.yml` (typed, diffable).
-3. **Resolve + bind** — Chewy walks the dependency chains, selects satisfying
-   providers, and applies the mapping layer to wire outputs → inputs.
-4. **Validate** — deterministic check that every required input is satisfied by
-   some provided output, every modifier is honored, and the graph is complete.
-   Structured pass/fail.
-5. **Dev / deploy** — only on a passing graph does local bring-up or a Pulumi
-   deploy proceed; the deployer supplies infrastructure keys, nothing else.
+Those commands update canonical project state:
 
-## CLI shape for deterministic agent use
+```yaml
+features:
+  web:
+    provider: astro
+    status: enabled
+  api:
+    provider: hono
+    status: enabled
+  auth:
+    provider: better-auth
+    requires:
+      - database
+      - email
+  queue:
+    capability: queue
+    bindings:
+      local-compose: bullmq-redis
+      cloudflare: cloudflare-queues
+      vm: bullmq-redis
+      kubernetes: bullmq-redis
 
-- `chewy resolve` — resolve the dependency graph; report unsatisfied
-  requirements and ambiguous choices as structured diagnostics.
-- `chewy validate` — full graph + mapping validation; `--json`, non-zero exit on
-  failure.
-- `chewy plan` — show the concrete provisioning + binding implications of a
-  proposed change without applying.
-- `chewy dev start` / `chewy dev status` — deterministic local bring-up.
-- `chewy deploy plan` / `chewy deploy apply` — Pulumi plan/apply gated on a
-  passing graph.
+targets:
+  local: local-compose
+  preview: cloudflare
+  production: cloudflare
+```
 
-Every command: `--json` output, stable exit codes, no interactive prompts under
-a non-interactive flag.
+Then Chewy exposes both machine-readable state and human/agent guidance:
 
-## Monorepo direction
+```bash
+chewy status --json
+chewy validate --json
+chewy doctor
+chewy instructions --agent codex
+chewy instructions --feature auth
+chewy instructions --target kubernetes
+```
 
-The current `chewy-global` is a meta-repo orchestrating ~21 submodules with
-versions kept in lockstep via semver-named branches — overhead that fights
-against agentic workflows. Go **monorepo-native**: collapse the submodules into
-one tree (the 2025 subtree-conversion work is a step toward this) so an agent
-sees the whole graph, and a requirement change plus the code that satisfies it
-land in one atomic commit. The component/provider catalog stays modular *within*
-the monorepo.
+The agent performs the non-deterministic work: installing packages, adapting
+file layout, adding middleware, writing migrations, wiring tests, handling
+version-specific changes, and repairing integration details. Chewy bounds that
+work with expected structure, invariants, diagnostics, and verification.
 
-## Practical MVP sequence
+## Component Contracts as Agent Operating Manuals
 
-1. **Model one real chain end to end.** Next.js/Prisma → Postgres(pgvector) →
-   { DigitalOcean Managed Postgres } with explicit requires/provides + mapping.
-   Prove the connection string is resolved and injected correctly.
-2. **Add a second provider for the same dependency** (Neon) to prove the chain
-   collapses and the consumer is unchanged. This validates the whole abstraction.
-3. **Ship `chewy resolve` + `chewy validate`** with structured diagnostics — the
-   keystone everything agentic depends on.
-4. **Grow the binding library deliberately** along the highest-value pairings
-   (Hasura+Postgres variants, service+S3-compatible storage variants). Treat
-   each entry as a tested unit. This is where the moat accrues.
-5. **Make `dev start` and `deploy` consume the resolved graph**, deployer
-   supplying only keys.
-6. **Author `chewy-agent.yml` + `--json` everywhere** so the loop is safely
-   operable by an agent harness.
-7. **Collapse to a monorepo** once the loop works on one stack.
+A component contract should be more than a package manifest. It should be an
+operating manual for agents.
 
-## What stays the same / what changes
+```yaml
+component: hono-api
+kind: api
 
-- **Stays:** the curated component/provider model, the dependency graph, the
-  Pulumi-based provisioning, the typed schemas.
-- **Changes:** the *framing* (from "app generator" to "agent-operable
-  resolution + binding substrate"), the *explicitness* of requires/provides/
-  mappings, the deliberate investment in the **binding-pattern library** as the
-  core asset, the *CLI surface* (structured, deterministic), and the *repo
-  structure* (monorepo over submodules).
+runtime:
+  local:
+    compose_service: api
+    port: 8787
+    healthcheck: /health
+  cloudflare:
+    worker: api
+    command: wrangler dev
+  kubernetes:
+    namespace_from: environment
+    deployment: api
 
-The bet: Chewy's durable moat in an agent world is the **library of binding
-patterns + the resolution engine that applies them** across many providers — the
-operational knowledge of how real systems connect — not the scaffolding agents
-already produce, and not the provisioning primitive (Pulumi) underneath.
+debug:
+  local:
+    logs: docker compose logs -f api
+    enable_verbose_mode:
+      env:
+        HONO_DEBUG: "true"
+  cloudflare:
+    logs: wrangler tail
+  vm:
+    logs: journalctl -u chewy-api -f
+    inspect_disk: df -h
+  kubernetes:
+    logs: kubectl logs deploy/api -n ${namespace}
+    events: kubectl get events -n ${namespace}
+    shell: kubectl exec -it deploy/api -n ${namespace} -- sh
+
+test:
+  smoke:
+    - GET /health returns 200
+  playwright:
+    base_url_from: web.public_url
+
+agent:
+  can_modify:
+    - src/routes/**
+    - src/middleware/**
+  must_not_modify:
+    - production secret bindings
+```
+
+This is the layer most frameworks do not provide: not merely "run this
+container," but "this is how an agent configures, tests, logs into, observes,
+and debugs this component on each target."
+
+## Declarative Compatibility as a Selection Filter
+
+Chewy should score components by how safely agents can operate them:
+
+- Can configuration be represented as files or reproducible commands?
+- Can important state be exported/imported deterministically?
+- Can permissions, schemas, content models, and dashboards be versioned?
+- Can local dev be reproduced without hidden admin UI state?
+- Can a healthcheck prove the component is up?
+- Can an agent seed it, log in, run Playwright tests, and inspect failures?
+- Can upgrades be tested?
+- Can the same component be promoted across environments?
+
+Tools that are powerful but opaque should be second-class until Chewy can define
+a reliable operating contract for them. A smaller set of boring, declarative
+components is more valuable than a large marketplace of fragile integrations.
+
+## Dependency Resolution Still Matters
+
+The original Chewy dependency-resolution idea remains useful, but it should be
+grounded in practical startup capabilities.
+
+A service declares what it requires:
+
+```yaml
+requires:
+  - database:
+      kind: postgres
+      modifiers:
+        - pgvector
+  - object-storage:
+      kind: s3-compatible
+  - queue
+```
+
+Different targets can satisfy those capabilities differently:
+
+- Local Compose: Postgres container, MinIO or local S3-compatible service, Redis
+  + BullMQ.
+- Cloudflare: D1 or external Postgres via an appropriate binding, R2,
+  Cloudflare Queues.
+- VM: Docker Compose or systemd services, Postgres volume, Redis volume, remote
+  object storage.
+- Kubernetes: Postgres operator or managed Postgres, Redis deployment or managed
+  Redis, S3-compatible storage, Kubernetes-native debug commands.
+- AWS/GCP/Azure later: managed databases, object storage, queue services, or VM
+  defaults where cost simplicity matters more than managed-service purity.
+
+The consumer should not care whether `queue` is BullMQ+Redis locally and
+Cloudflare Queues in preview, as long as the contract explains the behavioral
+constraints and verification checks.
+
+## Deployment Targets
+
+Chewy should start with a limited, opinionated target set.
+
+### 1. Cloudflare-first, near-zero-cost path
+
+Cloudflare is attractive because it can support a useful early-stage stack with
+very low baseline cost:
+
+- Astro static/SSR where appropriate
+- Hono on Workers
+- R2 for object storage
+- D1 or an external Postgres path where relational features are required
+- Queues for simple background work
+- KV/Durable Objects where they fit
+
+This target gives Chewy a compelling first demo: a real app that can run before
+it creates a serious cloud bill.
+
+### 2. Cheap VM path
+
+A single VM is the pragmatic escape hatch for workloads Cloudflare does not fit:
+
+- Docker Compose or systemd
+- Caddy/Traefik
+- Postgres volume
+- Redis volume
+- remote object storage or MinIO
+- backups
+- logs and disk inspection playbooks
+
+This should be cheap and boring, not a miniature enterprise platform.
+
+### 3. Kubernetes path
+
+Kubernetes should be a supported target, not the default ideology:
+
+- strict namespace and environment conventions
+- manifests, Helm, or Kustomize generated from Chewy contracts
+- ingress, secrets, volumes, service accounts, and probes
+- staging verification
+- explicit agent debug playbooks using `kubectl`
+
+The point is not "use Kubernetes for everything." The point is that when a stack
+does run on Kubernetes, agents should receive precise instructions for deploying
+and debugging it.
+
+### 4. Big-cloud managed paths later
+
+AWS, GCP, and Azure should come later in two modes:
+
+- low-cost VM/container defaults
+- managed-service variants for teams that explicitly want RDS, Cloud SQL,
+  ElastiCache, S3/GCS, ECS, EKS, GKE, etc.
+
+Chewy should avoid making an expensive managed-cloud staging stack the default.
+
+## CLI Shape
+
+The CLI should be small and deterministic:
+
+```bash
+chewy init
+chewy feature list
+chewy feature enable auth --with better-auth
+chewy feature disable cms
+chewy target add cloudflare
+chewy target add vm
+chewy status --json
+chewy validate --json
+chewy doctor
+chewy instructions
+chewy instructions --agent codex
+chewy instructions --feature auth
+chewy instructions --target staging
+chewy verify local
+chewy verify staging
+chewy deploy plan --target cloudflare
+chewy deploy apply --target cloudflare
+```
+
+Every command that agents call should support stable exit codes, `--json`, and
+non-interactive behavior.
+
+## Verification as the Moat
+
+The real asset is not a list of integrations. It is verified stack recipes.
+
+A recipe should include:
+
+- component manifests
+- dependency contracts
+- provider bindings
+- environment variable and secret mappings
+- local dev setup
+- deployment target rules
+- seed flows
+- Playwright and smoke tests
+- debug playbooks
+- safe-edit rules for agents
+- upgrade and compatibility notes
+
+For example:
+
+```text
+Astro + Hono + Better Auth + Postgres + Queue + Object Storage
+```
+
+The demo should prove:
+
+1. Start locally.
+2. Seed a user.
+3. Log in through Playwright.
+4. Call the Hono API as the current user.
+5. Write/read Postgres.
+6. Upload/read an object.
+7. Enqueue and process a job.
+8. Deploy to one target.
+9. Run the same verification remotely.
+10. Produce debug instructions when a check fails.
+
+## MVP Sequence
+
+1. Define the Chewy app state schema for `features`, `targets`, `capabilities`,
+   and `bindings`.
+2. Implement `chewy feature enable/disable`, `chewy target enable/disable`,
+   `chewy status --json`, and `chewy validate --json`.
+3. Define component contracts for Astro, Hono, Better Auth, Postgres, object
+   storage, and queue.
+4. Generate agent instructions from enabled state: global instructions, per
+   feature instructions, and per target instructions.
+5. Build the first verified recipe locally with Docker Compose.
+6. Add a Cloudflare target for the near-zero-cost path.
+7. Add a cheap VM target.
+8. Add Kubernetes only after the local and Cloudflare/VM paths prove the model.
+9. Treat every new component/provider support claim as incomplete until it has a
+   verification flow and debug playbook.
+
+## What Changes From The Old Chewy
+
+- **Old Chewy:** tries to deterministically install and wire a large deep stack.
+- **New Chewy:** deterministically declares the stack and emits operating
+  contracts for agents that do the messy integration work.
+- **Old moat:** component catalog plus dependency graph.
+- **New moat:** verified recipes, target-specific debug playbooks, and
+  agent-operable contracts.
+- **Old target strategy:** provider breadth and Pulumi-driven provisioning.
+- **New target strategy:** near-zero-cost Cloudflare path first, cheap VM path
+  second, Kubernetes as a supported target, managed clouds later.
+- **Old component support:** if a component is useful, add it.
+- **New component support:** if a component is declarative, testable,
+  inspectable, and debuggable by agents, promote it.
+
+The bet: Chewy should not eliminate looseness. It should bound looseness. It
+defines the shape of the stack, the invariants, the tests, the debug paths, and
+the safe operating envelope, then lets agents handle the integration details
+inside that envelope.
